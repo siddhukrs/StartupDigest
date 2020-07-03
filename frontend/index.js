@@ -10,7 +10,7 @@ import CardActions from "@material-ui/core/CardActions";
 import Button from '@material-ui/core/Button';
 import Slider from '@material-ui/core/Slider';
 import Chip from '@material-ui/core/Chip';
-import TextField from '@material-ui/core';
+import { TextField } from '@material-ui/core';
 
 function query(term, count, ) {
     var baseUrl = 'https://api.us-south.discovery.watson.cloud.ibm.com/instances/7aefdf7f-47e9-4f3a-bbfd-777424685850/v1/environments/system/collections/news-en/query?version=2019-04-30';
@@ -183,7 +183,7 @@ function App() {
         });
         return (
             <div>
-                <Heading size="xlarge" className={classes.heading}> {companyName.toUpperCase()} </Heading>
+                <Heading size="xxlarge" className={classes.heading}> {companyName.toUpperCase()} </Heading>
                 <Heading textColor="light" size="small" className={classes.subheading} > News reports </Heading>
                 {cards}
                 <Heading textColor="light" size="small" className={classes.subheading} > Overall sentiment </Heading>
