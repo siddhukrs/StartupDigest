@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
-import {cursor} from '@airtable/blocks';
-import { initializeBlock, useBase, useLoadable, useWatchable, useRecords, Heading, Text, ProgressBar, Link } from '@airtable/blocks/ui';
+import {cursor, settingsButton} from '@airtable/blocks';
+import { initializeBlock, useBase, useLoadable, useGlobalConfig, useWatchable, useRecords, Heading, Text, ProgressBar, Link, Box } from '@airtable/blocks/ui';
 import axios from 'axios';
-import { makeStyles } from "@material-ui/core/styles";
+import { makeStyles, createMuiTheme } from "@material-ui/core/styles";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import CardMedia from "@material-ui/core/CardMedia";
@@ -10,36 +10,69 @@ import CardActions from "@material-ui/core/CardActions";
 import Button from '@material-ui/core/Button';
 import Slider from '@material-ui/core/Slider';
 import Chip from '@material-ui/core/Chip';
-import { TextField } from '@material-ui/core';
+import { ThemeProvider } from '@material-ui/styles';
+import qs from 'qs';
+import WatsonSetupWizard from './watsonSetupWizard.js';
 
-function query(term, count, ) {
-    var baseUrl = 'https://api.us-south.discovery.watson.cloud.ibm.com/instances/7aefdf7f-47e9-4f3a-bbfd-777424685850/v1/environments/system/collections/news-en/query?version=2019-04-30';
+function query(apiToken, term, count) {
+    var baseUrl = 'https://api.us-south.discovery.watson.cloud.ibm.com/instances/490aeba8-9ab8-4dbd-929c-f426233156ab/v1/environments/system/collections/news-en/query?version=2019-04-30';
     var config = {
         method: 'get',
         url: baseUrl + '&count=' + count + '&query=' + term,
         headers: {
             'Host': 'api.us-south.discovery.watson.cloud.ibm.com', 
-            'Authorization': 'Bearer eyJraWQiOiIyMDIwMDYyNDE4MzAiLCJhbGciOiJSUzI1NiJ9.eyJpYW1faWQiOiJpYW0tU2VydmljZUlkLTQ0M2RiOWQzLWQ3YmItNGMyNS05ODY5LTE4N2YzMzI4ZjM2NCIsImlkIjoiaWFtLVNlcnZpY2VJZC00NDNkYjlkMy1kN2JiLTRjMjUtOTg2OS0xODdmMzMyOGYzNjQiLCJyZWFsbWlkIjoiaWFtIiwiaWRlbnRpZmllciI6IlNlcnZpY2VJZC00NDNkYjlkMy1kN2JiLTRjMjUtOTg2OS0xODdmMzMyOGYzNjQiLCJuYW1lIjoiQXV0by1nZW5lcmF0ZWQgc2VydmljZSBjcmVkZW50aWFscyIsInN1YiI6IlNlcnZpY2VJZC00NDNkYjlkMy1kN2JiLTRjMjUtOTg2OS0xODdmMzMyOGYzNjQiLCJzdWJfdHlwZSI6IlNlcnZpY2VJZCIsInVuaXF1ZV9pbnN0YW5jZV9jcm5zIjpbImNybjp2MTpibHVlbWl4OnB1YmxpYzpkaXNjb3Zlcnk6dXMtc291dGg6YS9kMjhjN2Q5ZDc5ZDM0YjE2YjFiYzgzYzc3NWMyNTM3Mjo3YWVmZGY3Zi00N2U5LTRmM2EtYmJmZC03Nzc0MjQ2ODU4NTA6OiJdLCJhY2NvdW50Ijp7InZhbGlkIjp0cnVlLCJic3MiOiJkMjhjN2Q5ZDc5ZDM0YjE2YjFiYzgzYzc3NWMyNTM3MiJ9LCJpYXQiOjE1OTM3NDkyNzMsImV4cCI6MTU5Mzc1Mjg3MywiaXNzIjoiaHR0cHM6Ly9pYW0uY2xvdWQuaWJtLmNvbS9pZGVudGl0eSIsImdyYW50X3R5cGUiOiJ1cm46aWJtOnBhcmFtczpvYXV0aDpncmFudC10eXBlOmFwaWtleSIsInNjb3BlIjoiaWJtIG9wZW5pZCIsImNsaWVudF9pZCI6ImJ4IiwiYWNyIjoxLCJhbXIiOlsicHdkIl19.MNRq9mEx5jisSS371vp6RS1nBMx8Geo3vbhCMeeZaFUEl4zBYvEPgO0-LfCWa3SQ2clS9vZKSnY9lW3FXDYZzP7FtZzBUHxmFts95OQMwPFX1lOdDhvWPjEAT6hOG9nlH9iVBlzjv_-khY6i5QCueFY2ildfAAHnInnzbHQIXxRdJduMw6RPN8DwehtxdCIMKHSDcLcbVzKooyJ3CVMB86YoNw5mcVKqx2y_cvPi7nndF3UFwBRliUiS8pvNOcXJlJUMZfcZ1Wgyo454HIuoG5OrjztvDjqOBgISAZBbztWi8gIwIIHLtJUrkE0XSDGijA6G1zC2qDWKdLxzENH1Sg'
+            'Authorization': 'Bearer ' + apiToken
         }
     };
     return axios(config);
 }
 
+function getApiToken(key) {
+    var data = {
+        apikey: key,
+        grant_type : "urn:ibm:params:oauth:grant-type:apikey"
+    };
+    var config = {
+        method: 'post',
+        url: 'https://cors-anywhere.herokuapp.com/https://iam.cloud.ibm.com/oidc/token',
+        headers: { 
+            'Accept': ' application/json', 
+            'Content-Type': 'application/x-www-form-urlencoded', 
+            'Cookie': 'sessioncookie=db1d81ee77c52e668f450df0f2da927d'
+        },
+        data : qs.stringify(data)
+    };
+    return axios(config);
+}
+
+const Pages = {
+    SETUP_WIZARD: 'setupWizard',
+    MAIN: 'main',
+};
+
 function App() {
-    const [apiKey, setApiKey] = useState("");
+    const globalConfig = useGlobalConfig();
+
+    const [currentBlockState, setCurrentBlockState] = useState(() => {
+        const initialPage = !globalConfig.get('apiKey') ? Pages.SETUP_WIZARD : Pages.MAIN;
+        return {currentPage: initialPage};
+    });
+
+    const [apiToken, setApiToken] = useState("");
+    const [refreshToken, setRefreshToken] = useState("");
     const [companyName, setCompanyName] = useState("");
     const [json, setJson] = useState({});
 
     useEffect(() => {
         if (companyName != "") {
-            // query(companyName, 5)
+            // query(apiToken, companyName, 5)
             // .then(resJson => {
             //     setJson(resJson);
             // })
             // .catch(error => alert(error));
             setJson(require("./sample.json"));
         };
-    }, [companyName, apiKey]);
+    }, [apiToken, companyName]);
 
     const base = useBase();
     useLoadable(cursor);
@@ -54,6 +87,23 @@ function App() {
             }
         }
     });
+
+    const theme = createMuiTheme({
+        palette: {
+          primary: {
+            light: '#9752e0',
+            main: '#9752e0',
+            dark: '#9752e0',
+            contrastText: '#fff',
+          },
+          secondary: {
+            light: '#c6a0ee',
+            main: '#c6a0ee',
+            dark: '#c6a0ee',
+            contrastText: '#000',
+          },
+        },
+      });
 
     const useStyles = makeStyles(theme => ({
         root: {
@@ -89,9 +139,16 @@ function App() {
             float: "left"
         },
         bar: {
+            color: '#9752e0',
+            marginTop: 42,
+            marginLeft: 70,
+            height: 6,
+            width: 150,
+        },
+        slider: {
+            color: '#9752e0',
             marginTop: 20,
             marginLeft: 20,
-            color: '#52af77',
             height: 8,
             width: 300,
         },
@@ -103,7 +160,7 @@ function App() {
         heading: {
             marginLeft: 20,
             marginTop: 20,
-            color: "#4c34eb"
+            color: "#9752e0"
         },
         subheading: {
             marginLeft: 20,
@@ -124,79 +181,92 @@ function App() {
             width: "20%",
             height: 130,
         },
-        box: {
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "500px",
-            height: "500px"
-        },
     }));
     const classes = useStyles();
 
-    if (apiKey != "" && companyName != "" && Object.keys(json).length != 0) {
-        var cards = [];
-        json["data"]["results"].forEach(element => {
-            var chips;
-            if (element.enriched_text.concepts.length >= 3) {
-                chips = <div className={classes.chipCollection}><Chip size="small" color="secondary" className = {classes.chip} label={element.enriched_text.concepts[0].text} />
-                        <Chip size="small" color="secondary" className = {classes.chip} label={element.enriched_text.concepts[1].text} />
-                        <Chip size="small" color="secondary" className = {classes.chip} label={element.enriched_text.concepts[2].text} /></div>
-            }
-            cards.push (
-                <Card className={classes.root}>
-                    <div className={classes.details}>
-                        <CardContent className={classes.content}>
-                            <Link href={element.url}>
-                                <Heading size="small">
-                                    {element.title}
-                                </Heading>
-                            </Link>
-                            <Text size="small">
-                                {element.host}
-                            </Text>
-                            <Text size="small" textColor="light" marginTop={2}>
-                                {new Date(element.publication_date).toDateString()}
-                            </Text>
-                            <Text variant="paragraph" size="small" marginTop={2}>
-                                {element.text}
-                            </Text> 
-                            <Text size="small" textColor="light" marginTop={2} marginLef={2} className={classes.barLabel}>
-                                Sentiment
-                            </Text>
-                            <Slider className={classes.bar}
-                                defaultValue={Math.floor(element.enriched_text.sentiment.document.score*100)}
-                                valueLabelDisplay="auto"
-                            />
-                        </CardContent>
-                        {chips}
-                        <CardActions className={classes.button}>
-                            <Button size="small" color="primary">
-                            Save
-                            </Button>
-                        </CardActions>
-                    </div>
-                    <CardMedia className={classes.cover} image={element.main_image_url}/>
-                    {/* <ProgressBar className={classes.bar} progress={element.enriched_text.sentiment.document.score} barColor='#378938' /> */}
-                </Card>
+    switch (currentBlockState.currentPage) {
+        case Pages.SETUP_WIZARD: {
+            return (
+                <WatsonSetupWizard
+                    onSetupComplete={() => {
+                        getApiToken(globalConfig.get('apiKey'))
+                        .then(data =>{
+                            setApiToken(data.data.access_token);
+                            setRefreshToken(data.data.refresh_token);
+                            setCurrentBlockState({
+                                currentPage: Pages.MAIN,
+                            });
+                        })
+                        .catch(
+                            error => alert(error)
+                        );
+                    }}
+                />
             );
-        });
-        return (
-            <div>
-                <Heading size="xxlarge" className={classes.heading}> {companyName.toUpperCase()} </Heading>
-                <Heading textColor="light" size="small" className={classes.subheading} > News reports </Heading>
-                {cards}
-                <Heading textColor="light" size="small" className={classes.subheading} > Overall sentiment </Heading>
-
-            </div>
-        );
-    } else {
-        return (
-            <div class="box">
-                <CardMedia className={classes.watson} image="https://i.pinimg.com/originals/e9/f4/ea/e9f4ea5b670fe8235dee75dbbf098737.png"/>
-                <TextField className={classes.apiKey} label="Watson API Key" variant="outlined" width="320px" value={apiKey} onChange={e => setApiKey(e.target.value)} type="password"/>
-            </div>
-        );
+        }
+        case Pages.MAIN: {
+            var cards = [];
+            if (companyName != "" && Object.keys(json).length != 0) {
+                json["data"]["results"].forEach(element => {
+                    var chips = [];
+                    if (element.enriched_text.concepts.length >= 3) {
+                        chips = <div className={classes.chipCollection}>
+                                    <Chip size="small" color="secondary" className = {classes.chip} label={element.enriched_text.concepts[0].text} />
+                                    <Chip size="small" color="secondary" className = {classes.chip} label={element.enriched_text.concepts[1].text} />
+                                    <Chip size="small" color="secondary" className = {classes.chip} label={element.enriched_text.concepts[2].text} />
+                                </div>
+                    }
+                    cards.push (
+                        <ThemeProvider theme={theme}>
+                            <Card className={classes.root}>
+                                <div className={classes.details}>
+                                    <CardContent className={classes.content}>
+                                        <Link href={element.url}>
+                                            <Heading size="small">
+                                                {element.title}
+                                            </Heading>
+                                        </Link>
+                                        <Text size="small">
+                                            {element.host}
+                                        </Text>
+                                        <Text size="small" textColor="light" marginTop={2}>
+                                            {new Date(element.publication_date).toDateString()}
+                                        </Text>
+                                        <Text variant="paragraph" size="small" marginTop={2}>
+                                            {element.text}
+                                        </Text>
+                                        <Text size="small" textColor="light" marginTop={2} marginLef={2} className={classes.barLabel}>
+                                            Sentiment
+                                        </Text>
+                                        {/* <Slider className={classes.bar}
+                                            defaultValue={Math.floor(element.enriched_text.sentiment.document.score*100)}
+                                            valueLabelDisplay="auto"
+                                        /> */}
+                                        <ProgressBar className={classes.bar} progress={element.enriched_text.sentiment.document.score} barColor={theme.palette.secondary.light} />
+                                    </CardContent>
+                                    {chips}
+                                    <CardActions className={classes.button}>
+                                        <Button size="small" color="primary">
+                                        Save
+                                        </Button>
+                                    </CardActions>
+                                </div>
+                                <CardMedia className={classes.cover} image={element.main_image_url}/>
+                            </Card>
+                        </ThemeProvider>
+                    );
+                });
+                return (
+                    <div>
+                        <Heading size="xxlarge" className={classes.heading}> {companyName.toUpperCase()} </Heading>
+                        <Heading textColor="light" size="small" className={classes.subheading} > News reports </Heading>
+                        {cards}
+                        <Heading textColor="light" size="small" className={classes.subheading} > Overall sentiment </Heading>
+                    </div>
+                );
+            }
+            return <div>{cards}</div>
+        }
     }
 }
     
