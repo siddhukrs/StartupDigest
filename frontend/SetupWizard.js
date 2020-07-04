@@ -31,7 +31,7 @@ const SetupWizardScreen = ({
     const useStyles = makeStyles(theme => ({
         box: {
             marginTop: 25,
-            marginLeft: "38%",
+            marginLeft: "42%",
             color: "#9752e0",
         },
     }));

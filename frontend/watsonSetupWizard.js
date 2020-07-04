@@ -1,10 +1,10 @@
 import {ViewportConstraint, Input, useViewport, useGlobalConfig, Box, Text } from '@airtable/blocks/ui';
 import React, {useState} from 'react';
-import { TextField } from '@material-ui/core';
 import { makeStyles, createMuiTheme } from "@material-ui/core/styles";
 import CardMedia from "@material-ui/core/CardMedia";
 import Typography from '@material-ui/core/Typography';
 import Link from '@material-ui/core/Link';
+import { ThemeProvider } from '@material-ui/styles';
 
 import SetupWizard from './SetupWizard';
 
@@ -49,96 +49,120 @@ function WatsonSetupWizard({ onSetupComplete }) {
         onSetupComplete();
     }
 
-    const useStyles = makeStyles(theme => ({
-        apiKey: {
-            marginLeft: 20,
-            marginTop: 20
+    const theme = createMuiTheme({
+        palette: {
+          primary: {
+            light: '#9752e0',
+            main: '#9752e0',
+            dark: '#9752e0',
+            contrastText: '#fff',
+          },
+          secondary: {
+            light: '#c6a0ee',
+            main: '#c6a0ee',
+            dark: '#c6a0ee',
+            contrastText: '#000',
+          },
         },
-        watson:{
-            width: 120,
-            height: 130,
+      });
+
+    const useStyles = makeStyles(theme => ({
+        setupText: {
+            marginTop: 25,
+            maxWidth: 450,
+            margin: "0 auto"
+        },
+        image: {
+            width: 300,
+            height: 300,
+            maxWidth: 450,
+            marginTop: 20,
+            margin: "0 auto"
+        },
+        watson: {
+            width: 30,
+            height: 30,
+            maxWidth: 100,
+            float: "left",
+            marginRight: 20
+        },
+        heading: {
+            float: "right"
         },
         box: {
             marginTop: 25,
-            marginLeft: "33%",
+            width: 400,
+            margin: "0 auto"
         },
-        setupText: {
-            marginTop: 25,
-            marginLeft: "25%",
-            maxWidth: 450
-        },
-        image: {
-            width: 250,
-            height: 250,
-            marginTop: 20,
-            marginLeft: "30%",
+        homeBox: {
+            marginTop: 500,
+            width: 400,
+            margin: "0 auto",
         },
     }));
     const classes = useStyles();
 
     return (
-        <ViewportConstraint maxFullscreenSize={{width: 540, height: 630}}>
-            <SetupWizard currentScreen={currentScreen} goToNextScreen={goToNextScreen}>
-                <SetupWizard.Screen
-                    key={SetupScreenKeys.intro}
-                    buttonText="Get Started"
-                    onButtonClick={() => {
-                        goToNextScreen();
-                        // viewport.enterFullscreenIfPossible();
-                    }}
-                >
-                        <Typography className={classes.box} variant="h4" gutterBottom>
-                            Startup Digest
-                        </Typography>
-                        <CardMedia className={classes.image} image="https://i.pinimg.com/originals/e9/f4/ea/e9f4ea5b670fe8235dee75dbbf098737.png" />
+        <ThemeProvider theme={theme}>
+            <ViewportConstraint maxFullscreenSize={{width: 540, height: 630}}>
+                <SetupWizard currentScreen={currentScreen} goToNextScreen={goToNextScreen}>
+                    <SetupWizard.Screen
+                        className={classes.homeBox}
+                        key={SetupScreenKeys.intro}
+                        buttonText="Get Started"
+                        onButtonClick={() => {
+                            goToNextScreen();
+                            // viewport.enterFullscreenIfPossible();
+                        }}
+                    >
+                        <CardMedia className={classes.image} image="https://cdn-items.s3.amazonaws.com/StartupDigest4.png" />
                     </SetupWizard.Screen>
 
-                <SetupWizard.Screen key={SetupScreenKeys.apiSetup} buttonText="Save and exit" onButtonClick={onSaveApiKeyClick} >
-                    <div className={classes.setupText}>
-                    <Typography variant="h5" gutterBottom>
-                        Create a Watson Discovery API Key
-                    </Typography>
-                    <Typography variant="subtitle2" gutterBottom>
-                    To use this block, you need to create an IBM Cloud Discovery service. If you’ve setup the discover block before, you can reuse the same API key.
-                    </Typography>
-                    <Typography variant="h6" gutterBottom>
-                        <ol>
-                          <li>
-                                <Typography variant="h6" gutterBottom>
-                                Create a IBM Cloud Account
-                                </Typography>
-                                <Typography variant="body2" gutterBottom>
-                                Go to the <Link href="https://cloud.ibm.com/registration">IBM Cloud Console</Link> and create a new account. You may also use an existing account of your own.
-                                </Typography>
-                          </li>
-
-                          <li>
-                                <Typography variant="h6" gutterBottom>
-                                    Create a discover services on IBM Cloud 
-                                </Typography>
-                                <Typography variant="body2" gutterBottom>
-                                    Create an instance of <Link href="https://cloud.ibm.com/catalog/services/discovery">Watson Discovery Service</Link> based on your plan requirements. 
-                                </Typography>
-                          </li>
-                          <li>
-                                <Typography variant="h6" gutterBottom>
-                                    Get the created Discovery API key 
-                                </Typography>
-                                <Typography variant="body2" gutterBottom>
-                                    Inside your Discovery instance,  manage page displays your API key. Copy the API key and paste it below
-                                </Typography>
-                          </li>
-
-                          <li>
-                            {/* <TextField size="small" className={classes.apiKey} label="Watson API Key" variant="outlined" width="320px" value={apiKey} onChange={e => setApiKey(e.target.value)} type="password"/> */}
-                            <Input type="text" onChange={(e) => setApiKey(e.target.value)} placeholder="Your API Key HERE" />
-                          </li>
-                        </ol>
-                        </Typography>
-                    </div>
-                </SetupWizard.Screen>
-            </SetupWizard>
-        </ViewportConstraint>
+                    <SetupWizard.Screen key={SetupScreenKeys.apiSetup} buttonText="Save" onButtonClick={onSaveApiKeyClick} className={classes.box} >
+                        <div className={classes.setupText}>
+                            <CardMedia className={classes.watson} image="https://i.pinimg.com/originals/e9/f4/ea/e9f4ea5b670fe8235dee75dbbf098737.png" />
+                            <Typography variant="h5" color="primary">
+                                Create a Watson Discovery API Key
+                            </Typography>
+                            <Typography variant="subtitle2">
+                                To use this block, you need to create an IBM Cloud Discovery service. If you’ve setup the discover block before, you can reuse the same API key.
+                            </Typography>
+                            <Typography variant="h6">
+                                <ol>
+                                    <li>
+                                        <Typography variant="h6" color="primary">
+                                            Create a IBM Cloud Account
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Go to the <Link href="https://cloud.ibm.com/registration">IBM Cloud Console</Link> and create a new account. You may also use an existing account of your own.
+                                        </Typography>
+                                    </li>
+                                    <li>
+                                        <Typography variant="h6" color="primary">
+                                            Create a discover services on IBM Cloud 
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Create an instance of <Link href="https://cloud.ibm.com/catalog/services/discovery">Watson Discovery Service</Link> based on your plan requirements. 
+                                        </Typography>
+                                    </li>
+                                    <li>
+                                        <Typography variant="h6" color="primary">
+                                            Get the created Watson Discovery API key 
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            Inside your Discovery instance,  manage page displays your API key. Copy the API key and paste it below
+                                        </Typography>
+                                    </li>
+                                    <li>
+                                        <Input type="text" onChange={(e) => setApiKey(e.target.value)} placeholder="Watson API Key" />
+                                    </li>
+                                </ol>
+                            </Typography>
+                        </div>
+                    </SetupWizard.Screen>
+                </SetupWizard>
+            </ViewportConstraint>
+        </ThemeProvider>
     );
 }
 

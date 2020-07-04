@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect } from 'react';
-import {cursor, settingsButton} from '@airtable/blocks';
-import { initializeBlock, useBase, useLoadable, useGlobalConfig, useWatchable, useRecords, Heading, Text, ProgressBar, Link, Box } from '@airtable/blocks/ui';
+import React, { useState, useEffect } from 'react';
+import {cursor} from '@airtable/blocks';
+import { initializeBlock, useBase, useLoadable, useGlobalConfig, useWatchable, useRecords, Heading, Text, ProgressBar, Link } from '@airtable/blocks/ui';
 import axios from 'axios';
 import { makeStyles, createMuiTheme } from "@material-ui/core/styles";
 import Card from "@material-ui/core/Card";
@@ -8,11 +8,11 @@ import CardContent from "@material-ui/core/CardContent";
 import CardMedia from "@material-ui/core/CardMedia";
 import CardActions from "@material-ui/core/CardActions";
 import Button from '@material-ui/core/Button';
-import Slider from '@material-ui/core/Slider';
 import Chip from '@material-ui/core/Chip';
 import { ThemeProvider } from '@material-ui/styles';
 import qs from 'qs';
 import WatsonSetupWizard from './watsonSetupWizard.js';
+import { Typography } from '@material-ui/core';
 
 function query(apiToken, term, count) {
     var baseUrl = 'https://api.us-south.discovery.watson.cloud.ibm.com/instances/490aeba8-9ab8-4dbd-929c-f426233156ab/v1/environments/system/collections/news-en/query?version=2019-04-30';
@@ -89,6 +89,7 @@ function App() {
             }
         }
     });
+
     var onSave = function(element) {
         var articleSentiment = "";
         if(element.enriched_text.sentiment.document.score > 0) {
@@ -119,6 +120,7 @@ function App() {
         "Notes": element.text
         });
     }
+
     const theme = createMuiTheme({
         palette: {
           primary: {
@@ -176,13 +178,6 @@ function App() {
             height: 6,
             width: 150,
         },
-        slider: {
-            color: '#9752e0',
-            marginTop: 20,
-            marginLeft: 20,
-            height: 8,
-            width: 300,
-        },
         barLabel: {
             marginTop: 27,
             marginLeft: 10, 
@@ -204,14 +199,6 @@ function App() {
         chipCollection: {
             marginLeft: 10,
         },
-        apiKey: {
-            marginLeft: 20,
-            marginTop: 20
-        },
-        watson:{
-            width: "20%",
-            height: 130,
-        },
     }));
     const classes = useStyles();
 
@@ -228,8 +215,10 @@ function App() {
                                 currentPage: Pages.MAIN,
                             });
                         })
-                        .catch(
-                            error => alert(error)
+                        .catch(error => {
+                                alert("Invalid API Key");
+                                globalConfig.setAsync('apiKey', "");
+                            }
                         );
                     }}
                 />
@@ -269,10 +258,6 @@ function App() {
                                         <Text size="small" textColor="light" marginTop={2} marginLef={2} className={classes.barLabel}>
                                             Sentiment
                                         </Text>
-                                        {/* <Slider className={classes.bar}
-                                            defaultValue={Math.floor(element.enriched_text.sentiment.document.score*100)}
-                                            valueLabelDisplay="auto"
-                                        /> */}
                                         <ProgressBar className={classes.bar} progress={element.enriched_text.sentiment.document.score} barColor={theme.palette.secondary.light} />
                                     </CardContent>
                                     {chips}
@@ -296,7 +281,9 @@ function App() {
                     </div>
                 );
             }
-            return <div>{cards}</div>
+            return <div>
+                <Typography>Select a cell to fetch data.</Typography>
+            </div>
         }
     }
 }
