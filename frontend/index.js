@@ -61,6 +61,7 @@ function App() {
     const [apiToken, setApiToken] = useState("");
     const [refreshToken, setRefreshToken] = useState("");
     const [companyName, setCompanyName] = useState("");
+    const [currentRecordId, setCurrentRecordId] = useState("");
     const [json, setJson] = useState({});
 
     useEffect(() => {
@@ -84,10 +85,40 @@ function App() {
             var value = record.getCellValueAsString("Name");
             if (value != "()" && value != null && value != undefined) {
                 setCompanyName(value);
+                setCurrentRecordId(cursor.selectedRecordIds[0]);
             }
         }
     });
-
+    var onSave = function(element) {
+        var articleSentiment = "";
+        if(element.enriched_text.sentiment.document.score > 0) {
+            if (element.enriched_text.sentiment.document.score > 0.5) {
+                articleSentiment = "Highly positive";
+            }
+            else {
+                articleSentiment = "Somewhat positive";
+            }
+        }
+        else if(element.enriched_text.sentiment.document.score < 0) {
+            if (element.enriched_text.sentiment.document.score < -0.5) {
+                articleSentiment = "Somewhat negative";
+            }
+            else {
+                articleSentiment = "Highly negative";
+            }
+        }
+        else if(element.enriched_text.sentiment.document.score = 0){
+            articleSentiment = "Neutral";
+        }
+            
+        const pressTable = base.getTableByName('Press mentions');
+        pressTable.createRecordAsync( { 'Article title': element.title,
+        'Companies mentioned': [{id: currentRecordId}],
+        'URL': element.url,
+        'How positive?': {name: articleSentiment},
+        "Notes": element.text
+        });
+    }
     const theme = createMuiTheme({
         palette: {
           primary: {
@@ -246,7 +277,7 @@ function App() {
                                     </CardContent>
                                     {chips}
                                     <CardActions className={classes.button}>
-                                        <Button size="small" color="primary">
+                                        <Button size="small" color="primary" onClick={e => onSave(element)}>
                                         Save
                                         </Button>
                                     </CardActions>
