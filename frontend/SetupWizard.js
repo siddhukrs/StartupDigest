@@ -1,6 +1,7 @@
 import {Button} from '@airtable/blocks/ui';
 import React from 'react';
 import _ from 'lodash';
+import { makeStyles, createMuiTheme } from "@material-ui/core/styles";
 
 function SetupWizard({ children, currentScreen, goToNextScreen }) {
     const screenIndicesByKey = {};
@@ -26,34 +27,22 @@ const SetupWizardScreen = ({
 }) => {
     const numScreens = 2;
 
+
+    const useStyles = makeStyles(theme => ({
+        box: {
+            marginTop: 25,
+            marginLeft: "38%",
+            color: "#9752e0",
+        },
+    }));
+    const classes = useStyles();
+
     return (
         <div>
             <div>{children}</div>
             <div>
-                <div
-                    style={{
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        position: 'absolute',
-                        display: 'flex',
-                    }}
-                >
-                    {_.times(numScreens, (i) => (
-                        <div
-                            key={`dot-${i}`}
-                            style={{
-                                width: '.5rem',
-                                height: '.5rem',
-                                borderRadius: '50%',
-                                marginRight: (i ===0 && numScreens === 2 || i !== 0 && i !== numScreens -1 ? '0.5rem': 0 ),
-                                marginLeft: (i !== 0 && i !== numScreens - 1 ? '0.5rem' : 0 ),
-                                backgroundColor: (screenIndex >= i ? 'hsla(0,0%,0%,0.5)' : 'hsla(0,0%,0%,0.25)' )
-                            }}
-                        />
-                    ))}
-                </div>
-                <Button onClick={onButtonClick} disabled={isButtonDisabled}>
-                    {buttonText} &rarr;
+                <Button onClick={onButtonClick} disabled={isButtonDisabled} className={classes.box}>
+                    {buttonText}
                 </Button>
             </div>
         </div>
