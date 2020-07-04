@@ -112,7 +112,7 @@ function WatsonSetupWizard({ onSetupComplete }) {
                         buttonText="Get Started"
                         onButtonClick={() => {
                             goToNextScreen();
-                            // viewport.enterFullscreenIfPossible();
+                            viewport.enterFullscreenIfPossible();
                         }}
                     >
                         <CardMedia className={classes.image} image="https://cdn-items.s3.amazonaws.com/StartupDigest4.png" />

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, PureComponent } from 'react';
 import {cursor} from '@airtable/blocks';
-import { initializeBlock, useBase, useLoadable, useGlobalConfig, useWatchable, useRecords, Heading, Text, ProgressBar, Link } from '@airtable/blocks/ui';
+import { initializeBlock, useBase, useLoadable, useGlobalConfig, useWatchable, useRecords, Heading, Text, ProgressBar, Link, useViewport } from '@airtable/blocks/ui';
 import axios from 'axios';
 import { makeStyles, createMuiTheme } from "@material-ui/core/styles";
 import Card from "@material-ui/core/Card";
@@ -13,6 +13,7 @@ import { ThemeProvider } from '@material-ui/styles';
 import qs from 'qs';
 import WatsonSetupWizard from './watsonSetupWizard.js';
 import { Typography } from '@material-ui/core';
+import { PieChart, Pie, Sector, Cell } from 'recharts';
 
 function query(apiToken, term, count) {
     var baseUrl = 'https://api.us-south.discovery.watson.cloud.ibm.com/instances/490aeba8-9ab8-4dbd-929c-f426233156ab/v1/environments/system/collections/news-en/query?version=2019-04-30';
@@ -66,12 +67,12 @@ function App() {
 
     useEffect(() => {
         if (companyName != "") {
-            // query(apiToken, companyName, 5)
-            // .then(resJson => {
-            //     setJson(resJson);
-            // })
-            // .catch(error => alert(error));
-            setJson(require("./sample.json"));
+            query(apiToken, companyName, 5)
+            .then(resJson => {
+                setJson(resJson);
+            })
+            .catch(error => alert(error));
+            // setJson(require("./sample.json"));
         };
     }, [apiToken, companyName]);
 
@@ -89,6 +90,14 @@ function App() {
             }
         }
     });
+    const viewport = useViewport();
+
+    var onLogout = function(){
+        globalConfig.setAsync('apiKey', "");
+        setCurrentBlockState({
+            currentPage: Pages.SETUP_WIZARD,
+        });
+    }
 
     var onSave = function(element) {
         var articleSentiment = "";
@@ -171,8 +180,11 @@ function App() {
         button: {
             float: "left"
         },
+        logoutButton: {
+            float: "right",
+            marginRight: 20,
+        },
         bar: {
-            color: '#9752e0',
             marginTop: 42,
             marginLeft: 70,
             height: 6,
@@ -186,7 +198,6 @@ function App() {
         heading: {
             marginLeft: 20,
             marginTop: 20,
-            color: "#9752e0"
         },
         subheading: {
             marginLeft: 20,
@@ -194,38 +205,57 @@ function App() {
         },
         chip: {
             margin: theme.spacing(0.5),
-            float: "left"
+            float: "left",
+            color:"#FFFFFF"
         },
         chipCollection: {
             marginLeft: 10,
         },
+        clickOnARowMessage: {
+            marginTop: "40%",
+            maxWidth: 300,
+            margin: "0 auto"
+        }
     }));
     const classes = useStyles();
+
+    var refreshApiToken = function() {
+        getApiToken(globalConfig.get('apiKey'))
+        .then(data =>{
+            setApiToken(data.data.access_token);
+            setRefreshToken(data.data.refresh_token);
+            setCurrentBlockState({
+                currentPage: Pages.MAIN,
+            });
+            viewport.exitFullscreen();
+        })
+        .catch(error => {
+                alert("Invalid API Key");
+                globalConfig.setAsync('apiKey', "");
+        });
+    };
 
     switch (currentBlockState.currentPage) {
         case Pages.SETUP_WIZARD: {
             return (
                 <WatsonSetupWizard
                     onSetupComplete={() => {
-                        getApiToken(globalConfig.get('apiKey'))
-                        .then(data =>{
-                            setApiToken(data.data.access_token);
-                            setRefreshToken(data.data.refresh_token);
-                            setCurrentBlockState({
-                                currentPage: Pages.MAIN,
-                            });
-                        })
-                        .catch(error => {
-                                alert("Invalid API Key");
-                                globalConfig.setAsync('apiKey', "");
-                            }
-                        );
+                        refreshApiToken();
+                        setInterval(() => {
+                            refreshApiToken();
+                        }, 600000);
                     }}
                 />
             );
         }
         case Pages.MAIN: {
             var cards = [];
+            var sentimentData= [];
+            const colors = {
+                positive: '#80e27e', 
+                negative: '#f44336', 
+                neutral: '#63ccff'
+            };
             if (companyName != "" && Object.keys(json).length != 0) {
                 json["data"]["results"].forEach(element => {
                     var chips = [];
@@ -236,6 +266,8 @@ function App() {
                                     <Chip size="small" color="secondary" className = {classes.chip} label={element.enriched_text.concepts[2].text} />
                                 </div>
                     }
+                    var sentimentScore = element.enriched_text.sentiment.document.score > 0 ? element.enriched_text.sentiment.document.score : -1*element.enriched_text.sentiment.document.score;
+                    var sentimentColor = element.enriched_text.sentiment.document.score > 0 ? colors.positive : colors.negative; 
                     cards.push (
                         <ThemeProvider theme={theme}>
                             <Card className={classes.root}>
@@ -258,12 +290,12 @@ function App() {
                                         <Text size="small" textColor="light" marginTop={2} marginLef={2} className={classes.barLabel}>
                                             Sentiment
                                         </Text>
-                                        <ProgressBar className={classes.bar} progress={element.enriched_text.sentiment.document.score} barColor={theme.palette.secondary.light} />
+                                        <ProgressBar className={classes.bar} progress={sentimentScore} barColor={sentimentColor} />
                                     </CardContent>
                                     {chips}
                                     <CardActions className={classes.button}>
                                         <Button size="small" color="primary" onClick={e => onSave(element)}>
-                                        Save
+                                            Save
                                         </Button>
                                     </CardActions>
                                 </div>
@@ -272,18 +304,59 @@ function App() {
                         </ThemeProvider>
                     );
                 });
+                
+                // var sentimentResults = json["data"]["aggregations"][0]["results"];
+                // var totalCount = 0;
+                // sentimentResults.forEach(ele => {
+                //     totalCount += ele.matching_results;
+                // });
+                // sentimentResults.forEach(ele => {
+                //     sentimentData.push({name: ele.key, value: Math.round(ele.matching_results*100/totalCount)});
+                // });
+
+                // var companies = new Set();
+                // var persons = new Set();
+                // var enrichedText = json["data"]["results"].forEach(result => {
+                //     result["enriched_text"]["entities"].forEach(entity => {
+                //         if(entity.type == "Person") {
+                //             persons.add(entity.text);
+                //         }
+                //         if (entity.type == "Company") {
+                //             companies.add(entity.text);
+                //         }
+                //     });
+                // });
+                // alert(companies.size);
+                // alert(persons.size);
+
                 return (
-                    <div>
-                        <Heading size="xxlarge" className={classes.heading}> {companyName.toUpperCase()} </Heading>
-                        <Heading textColor="light" size="small" className={classes.subheading} > News reports </Heading>
-                        {cards}
-                        <Heading textColor="light" size="small" className={classes.subheading} > Overall sentiment </Heading>
-                    </div>
+                    <ThemeProvider theme={theme}>
+                        <div>
+                            <Button size="small" color="primary" onClick={e => onLogout()} className={classes.logoutButton}>Logout</Button>
+                            <Typography variant="h4" color="primary" className={classes.heading}> {companyName.toUpperCase()} </Typography>
+                            {/* <Heading textColor="light" size="small" className={classes.subheading} > Overall sentiment </Heading>
+                            <PieChart width={200} height={200}>
+                                <Pie startAngle={360} endAngle={0} data={sentimentData} innerRadius={60} outerRadius={80} >
+                                {
+                                    sentimentData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={colors[entry.name]}/>
+                                    ))
+                                }
+                            </Pie>
+                            </PieChart> */}
+                            <Heading textColor="light" size="small" className={classes.subheading} > Top stories </Heading>
+                            {cards}
+                        </div>
+                    </ThemeProvider>
                 );
             }
-            return <div>
-                <Typography>Select a cell to fetch data.</Typography>
-            </div>
+            return (
+                <ThemeProvider theme={theme}>
+                    <div>
+                        <Typography className={classes.clickOnARowMessage} color="secondary">Select a row to generate your digest.</Typography>
+                    </div>
+                </ThemeProvider>
+            )
         }
     }
 }
