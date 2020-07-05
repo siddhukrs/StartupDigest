@@ -17,7 +17,7 @@ import { ThemeProvider } from '@material-ui/styles';
 import qs from 'qs';
 import WatsonSetupWizard from './watsonSetupWizard.js';
 import { Typography } from '@material-ui/core';
-import { PieChart, Pie, Cell } from 'recharts';
+import { PieChart, Pie, Cell, Sector } from 'recharts';
 import TagCloud from 'react-tag-cloud';
 
 const AntTabs = withStyles({
@@ -112,6 +112,7 @@ function App() {
     const [currentRecordId, setCurrentRecordId] = useState("");
     const [json, setJson] = useState({});
     const [tabValue, setTabValue] = useState("1");
+    const [activePieIndex, setActivePieIndex] = useState("1");
 
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
@@ -200,9 +201,20 @@ function App() {
       });
 
     const useStyles = makeStyles(theme => ({
-        root: {
+        newsCardRoot: {
             width: 800,
             maxWidth: 800,
+            "-webkit-box-shadow": "0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23)",
+            marginLeft: 20,
+            marginTop: 20,
+            fontFamily: 'Roboto',
+            display: 'flex',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+        },
+        vizCardRoot: {
+            width: 450,
+            maxWidth: 600,
             "-webkit-box-shadow": "0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23)",
             marginLeft: 20,
             marginTop: 20,
@@ -281,10 +293,9 @@ function App() {
             height: 200
         },
         tagContainer: {
-            float: "right",
             marginRight: 20,
             maxWidth: 200,
-            marginLeft: 90
+            marginLeft: 10
         },
         largeTag: {
             fontSize: 30,
@@ -293,9 +304,6 @@ function App() {
         smallTag: {
             opacity: 0.7,
             fontSize: 16
-        },
-        pieChart: {
-            float: "left"
         },
         leftFloat: {
             float: "left",
@@ -329,6 +337,52 @@ function App() {
         });
     };
 
+    const renderActiveShape = (props) => {
+        const RADIAN = Math.PI / 180;
+        const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle,
+          fill, payload, percent, value } = props;
+        const sin = Math.sin(-RADIAN * midAngle);
+        const cos = Math.cos(-RADIAN * midAngle);
+        const sx = cx + (outerRadius + 10) * cos;
+        const sy = cy + (outerRadius + 10) * sin;
+        const mx = cx + (outerRadius + 30) * cos;
+        const my = cy + (outerRadius + 30) * sin;
+        const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+        const ey = my;
+        const textAnchor = cos >= 0 ? 'start' : 'end';
+      
+        return (
+          <g>
+            <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>{payload.name}</text>
+            <Sector
+              cx={cx}
+              cy={cy}
+              innerRadius={innerRadius}
+              outerRadius={outerRadius}
+              startAngle={startAngle}
+              endAngle={endAngle}
+              fill={fill}
+            />
+            <Sector
+              cx={cx}
+              cy={cy}
+              startAngle={startAngle}
+              endAngle={endAngle}
+              innerRadius={outerRadius + 6}
+              outerRadius={outerRadius + 10}
+              fill={fill}
+            />
+            <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none"/>
+            <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none"/>
+            <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">{value.toLocaleString('en')}</text>
+          </g>
+        );
+      };
+
+    var onPieEnter = function(data, index) {
+        setActivePieIndex(index);
+    };
+
     switch (currentBlockState.currentPage) {
         case Pages.SETUP_WIZARD: {
             return (
@@ -350,6 +404,11 @@ function App() {
                 negative: '#f44336', 
                 neutral: '#63ccff'
             };
+            const pieChartColors = {
+                positive: '#9752e0', 
+                negative: '#c6a0ee', 
+                neutral: '#63ccff'
+            };
             if (companyName != "" && Object.keys(json).length != 0) {
                 json["data"]["results"].forEach(element => {
                     var chips = [];
@@ -364,7 +423,7 @@ function App() {
                     var sentimentColor = element.enriched_text.sentiment.document.score > 0 ? colors.positive : colors.negative; 
                     cards.push (
                         <ThemeProvider theme={theme}>
-                            <Card className={classes.root}>
+                            <Card className={classes.newsCardRoot}>
                                 <div className={classes.details}>
                                     <CardContent className={classes.content}>
                                         <Link rel="noopener noreferrer" target="_blank" href={element.url}>
@@ -400,12 +459,8 @@ function App() {
                 });
                 
                 var sentimentResults = json["data"]["aggregations"][0]["results"];
-                var totalCount = 0;
                 sentimentResults.forEach(ele => {
-                    totalCount += ele.matching_results;
-                });
-                sentimentResults.forEach(ele => {
-                    sentimentData.push({name: ele.key, value: Math.round(ele.matching_results*100/totalCount)});
+                    sentimentData.push({name: ele.key, value: Math.round(ele.matching_results)});
                 });
 
                 var companyNames = new Set();
@@ -418,7 +473,7 @@ function App() {
                             persons.add({name: entity.text, value: entity.relevance});
                             personNames.add(entity.text);
                         }
-                        if (entity.type == "Company" && entity.relevance > 0 && !companyNames.has(entity.text)) {
+                        if (entity.type == "Company" && entity.relevance > 0 && !companyNames.has(entity.text) && !entity.text.includes(companyName) && Number.isNaN(parseInt(entity.text))) {
                             companies.add({name: entity.text, value: entity.relevance});
                             companyNames.add(entity.text);
                         }
@@ -447,27 +502,57 @@ function App() {
                                 </TabPanel>
                                 <TabPanel value="2">
                                     <div className={classes.leftFloat}>
-                                        <PieChart width={200} height={200} className={classes.pieChart}>
-                                            <text x={100} y={100} textAnchor="middle" dominantBaseline="middle">
-                                                Overall Sentiment
-                                            </text>
-                                        <Pie startAngle={360} endAngle={0} data={sentimentData} innerRadius={60} outerRadius={80} >
-                                            {
-                                                sentimentData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={colors[entry.name]}/>
-                                                ))
-                                            }
-                                        </Pie>
-                                        </PieChart>
-                                        <div className={classes.tagContainer}>
-                                            <TagCloud className={classes.tagCloud}>
-                                                {
-                                                    Array.from(persons).map((ele, index) => (
-                                                        <div className={ele.value>0.2?classes.largeTag:classes.smallTag}>{ele.name}</div>
-                                                    ))
-                                                }
-                                            </TagCloud>
-                                        </div>
+                                        <Heading textColor="light" size="small" className={classes.subheading} > Overall Sentiment </Heading>
+                                        <Card className={classes.vizCardRoot}>
+                                            <div className={classes.details}>
+                                                <CardContent className={classes.content}>
+                                                    <PieChart width={400} height={250} className={classes.pieChart}>
+                                                        {/* <text x={100} y={100} textAnchor="middle" dominantBaseline="middle">
+                                                            Overall Sentiment
+                                                        </text> */}
+                                                        <Pie startAngle={360} endAngle={0} data={sentimentData} innerRadius={60} outerRadius={80} onMouseEnter={onPieEnter} activeIndex={activePieIndex} activeShape={renderActiveShape} >
+                                                            {
+                                                                sentimentData.map((entry, index) => (
+                                                                    <Cell key={`cell-${index}`} fill={pieChartColors[entry.name]}/>
+                                                                ))
+                                                            }
+                                                        </Pie>
+                                                    </PieChart>
+                                                </CardContent>
+                                            </div>
+                                        </Card>
+                                        <Heading textColor="light" size="small" className={classes.subheading} > Top People Mentions </Heading>
+                                        <Card className={classes.vizCardRoot}>
+                                            <div className={classes.details}>
+                                                <CardContent className={classes.content}>
+                                                    <div className={classes.tagContainer}>
+                                                        <TagCloud className={classes.tagCloud}>
+                                                            {
+                                                                Array.from(persons).map((ele, index) => (
+                                                                    <div className={ele.value>0.2?classes.largeTag:classes.smallTag}>{ele.name}</div>
+                                                                ))
+                                                            }
+                                                        </TagCloud>
+                                                    </div>
+                                                </CardContent>
+                                            </div>
+                                        </Card>
+                                        <Heading textColor="light" size="small" className={classes.subheading} > Top Company Mentions </Heading>
+                                        <Card className={classes.vizCardRoot}>
+                                            <div className={classes.details}>
+                                                <CardContent className={classes.content}>
+                                                    <div className={classes.tagContainer}>
+                                                        <TagCloud className={classes.tagCloud}>
+                                                            {
+                                                                Array.from(companies).map((ele, index) => (
+                                                                    <div className={ele.value>0.2?classes.largeTag:classes.smallTag}>{ele.name}</div>
+                                                                ))
+                                                            }
+                                                        </TagCloud>
+                                                    </div>
+                                                </CardContent>
+                                            </div>
+                                        </Card>
                                     </div>
                                 </TabPanel>
                             </TabContext>
