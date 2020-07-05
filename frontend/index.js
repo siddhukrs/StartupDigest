@@ -1,20 +1,66 @@
-import React, { useState, useEffect, PureComponent } from 'react';
+import React, { useState, useEffect } from 'react';
 import {cursor} from '@airtable/blocks';
 import { initializeBlock, useBase, useLoadable, useGlobalConfig, useWatchable, useRecords, Heading, Text, ProgressBar, Link, useViewport } from '@airtable/blocks/ui';
 import axios from 'axios';
-import { makeStyles, createMuiTheme } from "@material-ui/core/styles";
+import { makeStyles, createMuiTheme, withStyles } from "@material-ui/core/styles";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import CardMedia from "@material-ui/core/CardMedia";
 import CardActions from "@material-ui/core/CardActions";
 import Button from '@material-ui/core/Button';
 import Chip from '@material-ui/core/Chip';
+import Tabs from "@material-ui/core/Tabs";
+import Tab from "@material-ui/core/Tab";
+import TabPanel from "@material-ui/lab/TabPanel";
+import TabContext from "@material-ui/lab/TabContext";
 import { ThemeProvider } from '@material-ui/styles';
 import qs from 'qs';
 import WatsonSetupWizard from './watsonSetupWizard.js';
 import { Typography } from '@material-ui/core';
-import { PieChart, Pie, Sector, Cell } from 'recharts';
+import { PieChart, Pie, Cell } from 'recharts';
 import TagCloud from 'react-tag-cloud';
+
+const AntTabs = withStyles({
+    root: {
+      borderBottom: "1px solid #e8e8e8"
+    },
+    indicator: {
+      backgroundColor: "#9752e0"
+    },
+  })(Tabs);
+  
+  const AntTab = withStyles(theme => ({
+    root: {
+      textTransform: "none",
+      minWidth: 72,
+      fontWeight: theme.typography.fontWeightRegular,
+      marginRight: theme.spacing(8),
+      fontFamily: [
+        "-apple-system",
+        "BlinkMacSystemFont",
+        '"Segoe UI"',
+        "Roboto",
+        '"Helvetica Neue"',
+        "Arial",
+        "sans-serif",
+        '"Apple Color Emoji"',
+        '"Segoe UI Emoji"',
+        '"Segoe UI Symbol"'
+      ].join(","),
+      "&:hover": {
+        color: "#424242",
+        opacity: 1
+      },
+      "&$selected": {
+        color: "#424242",
+        fontWeight: theme.typography.fontWeightBold
+      },
+      "&:focus": {
+        color: "#424242"
+      },
+    },
+    selected: {}
+  }))(props => <Tab disableRipple {...props} />);
 
 function query(apiToken, term, count) {
     var baseUrl = 'https://api.us-south.discovery.watson.cloud.ibm.com/instances/490aeba8-9ab8-4dbd-929c-f426233156ab/v1/environments/system/collections/news-en/query?version=2019-04-30';
@@ -65,6 +111,11 @@ function App() {
     const [companyName, setCompanyName] = useState("");
     const [currentRecordId, setCurrentRecordId] = useState("");
     const [json, setJson] = useState({});
+    const [tabValue, setTabValue] = useState("1");
+
+    const handleTabChange = (event, newValue) => {
+        setTabValue(newValue);
+    };
 
     useEffect(() => {
         if (companyName != "") {
@@ -248,7 +299,17 @@ function App() {
         },
         leftFloat: {
             float: "left",
-        }
+        },
+        tabRoot: {
+            flexGrow: 1,
+            marginLeft: 20
+          },
+        tabDemo1: {
+            backgroundColor: theme.palette.background.paper
+          },
+        tabDemo2: {
+            backgroundColor: "#2e1534"
+          }
     }));
     const classes = useStyles();
 
@@ -368,35 +429,48 @@ function App() {
                     <ThemeProvider theme={theme}>
                         <div>
                             <Button size="small" color="primary" onClick={e => onLogout()} className={classes.logoutButton}>Revoke API Key</Button>
-                            <div className={classes.leftFloat}>
-                                <Typography variant="h4" color="primary" className={classes.heading}> {companyName.toUpperCase()} </Typography>
-                                <Heading textColor="light" size="small" className={classes.subheading} > News Analysis </Heading>
-                                <PieChart width={200} height={200} className={classes.pieChart}>
-                                <text x={100} y={100} textAnchor="middle" dominantBaseline="middle">
-                                    Overall Sentiment
-                                </text>
-                                <Pie startAngle={360} endAngle={0} data={sentimentData} innerRadius={60} outerRadius={80} >
-                                    {
-                                        sentimentData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={colors[entry.name]}/>
-                                        ))
-                                    }
-                                </Pie>
-                                </PieChart>
-                                <div className={classes.tagContainer}>
-                                    <TagCloud className={classes.tagCloud}>
-                                        {
-                                            Array.from(persons).map((ele, index) => (
-                                                <div className={ele.value>0.2?classes.largeTag:classes.smallTag}>{ele.name}</div>
-                                            ))
-                                        }
-                                    </TagCloud>
+                            <Typography variant="h4" color="primary" className={classes.heading}> {companyName.toUpperCase()} </Typography>
+                            <TabContext value={tabValue}>
+                                <div className={classes.tabRoot}>
+                                    <div className={classes.tabDemo1}>
+                                        <AntTabs value={tabValue} onChange={handleTabChange} aria-label="ant example">
+                                            <AntTab label="Top Stories" value="1"/>
+                                            <AntTab label="News Analysis" value="2"/>
+                                        </AntTabs>
+                                        <Typography className={classes.tabPadding} />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className={classes.leftFloat}>
-                                <Heading className={classes.subheading} textColor="light" size="small" > Top stories </Heading>
-                                {cards}
-                            </div>
+                                <TabPanel value="1">
+                                    <div className={classes.leftFloat}>
+                                        {cards}
+                                    </div>
+                                </TabPanel>
+                                <TabPanel value="2">
+                                    <div className={classes.leftFloat}>
+                                        <PieChart width={200} height={200} className={classes.pieChart}>
+                                            <text x={100} y={100} textAnchor="middle" dominantBaseline="middle">
+                                                Overall Sentiment
+                                            </text>
+                                        <Pie startAngle={360} endAngle={0} data={sentimentData} innerRadius={60} outerRadius={80} >
+                                            {
+                                                sentimentData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={colors[entry.name]}/>
+                                                ))
+                                            }
+                                        </Pie>
+                                        </PieChart>
+                                        <div className={classes.tagContainer}>
+                                            <TagCloud className={classes.tagCloud}>
+                                                {
+                                                    Array.from(persons).map((ele, index) => (
+                                                        <div className={ele.value>0.2?classes.largeTag:classes.smallTag}>{ele.name}</div>
+                                                    ))
+                                                }
+                                            </TagCloud>
+                                        </div>
+                                    </div>
+                                </TabPanel>
+                            </TabContext>
                         </div>
                     </ThemeProvider>
                 );

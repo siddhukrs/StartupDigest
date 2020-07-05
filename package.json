@@ -2,6 +2,7 @@
     "dependencies": {
         "@airtable/blocks": "0.0.53",
         "@material-ui/core": "^4.11.0",
+        "@material-ui/lab": "^4.0.0-alpha.56",
         "@material-ui/styles": "^4.10.0",
         "axios": "^0.19.2",
         "qs": "^6.9.4",
