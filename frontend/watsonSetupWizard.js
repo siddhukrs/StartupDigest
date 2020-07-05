@@ -125,13 +125,13 @@ function WatsonSetupWizard({ onSetupComplete }) {
                                 Create an IBM Watson Discovery API Key
                             </Typography>
                             <Typography variant="subtitle2">
-                                To use this block, you need to create an IBM Watson Cloud Discovery API key. If you already have an API Key, you can reuse the same one.
+                                To use this block, you need to create an IBM Watson Cloud Discovery API key. If you already have an API key, you can reuse the same one.
                             </Typography>
                             <Typography variant="h6">
                                 <ol>
                                     <li>
                                         <Typography variant="h6" color="primary">
-                                            Create a IBM Cloud Account
+                                            Create an IBM Cloud Account
                                         </Typography>
                                         <Typography variant="body2">
                                             Go to the <Link rel="noopener noreferrer" target="_blank" href="https://cloud.ibm.com/registration">IBM Cloud Console</Link> and create a new account or log in with an existing one.

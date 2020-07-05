@@ -32,7 +32,7 @@ const AntTabs = withStyles({
   const AntTab = withStyles(theme => ({
     root: {
       textTransform: "none",
-      minWidth: 72,
+      minWidth: 40,
       fontWeight: theme.typography.fontWeightRegular,
       marginRight: theme.spacing(8),
       fontFamily: [
@@ -120,26 +120,29 @@ function App() {
 
     useEffect(() => {
         if (companyName != "") {
-            // query(apiToken, companyName, 5)
-            // .then(resJson => {
-            //     setJson(resJson);
-            // })
-            // .catch(error => alert(error));
-            setJson(require("./sample.json"));
+            query(apiToken, companyName, 5)
+            .then(resJson => {
+                setJson(resJson);
+            })
+            .catch(error => alert(error));
+            // setJson(require("./sample.json"));
         };
     }, [apiToken, companyName]);
 
+    var tableName = "Portfolio companies";
     const base = useBase();
     useLoadable(cursor);
-    useRecords(base.getTableByIdIfExists(cursor.activeTableId));
+    useRecords(base.getTableByName(tableName));
     useWatchable(cursor, ['selectedFieldIds','selectedRecordIds'], () => {
-        var activeTable = base.getTableByIdIfExists(cursor.activeTableId);
+        var activeTable = base.getTableByName(tableName);
         if (cursor.selectedRecordIds[0] != null && cursor.selectedRecordIds[0] != undefined) {
             var record = activeTable.selectRecords().getRecordByIdIfExists(cursor.selectedRecordIds[0]);
-            var value = record.getCellValueAsString("Name");
-            if (value != "()" && value != null && value != undefined) {
-                setCompanyName(value);
-                setCurrentRecordId(cursor.selectedRecordIds[0]);
+            if (record != null) {
+                var value = record.getCellValueAsString("Name");
+                if (value != "()" && value != null && value != undefined) {
+                    setCompanyName(value);
+                    setCurrentRecordId(cursor.selectedRecordIds[0]);
+                }
             }
         }
     });
@@ -288,13 +291,13 @@ function App() {
         tagCloud : {
             fontFamily: "Roboto, sans-serif",
             color: "#9752e0",
-            padding: 1,
+            padding: 7,
             width:400,
-            height: 200
+            height: 200,
         },
         tagContainer: {
             marginRight: 20,
-            maxWidth: 200,
+            maxWidth: 400,
             marginLeft: 10
         },
         largeTag: {
@@ -458,16 +461,20 @@ function App() {
                     );
                 });
                 
+                var totalCount = 0;
                 var sentimentResults = json["data"]["aggregations"][0]["results"];
+                sentimentResults.forEach(ele => {	
+                    totalCount += ele.matching_results;	
+                });
                 sentimentResults.forEach(ele => {
-                    sentimentData.push({name: ele.key, value: Math.round(ele.matching_results)});
+                    sentimentData.push({name: ele.key, value: Math.round(ele.matching_results*100/totalCount)});
                 });
 
                 var companyNames = new Set();
                 var companies = new Set();
                 var personNames = new Set();
                 var persons = new Set();
-                var enrichedText = json["data"]["results"].forEach(result => {
+                json["data"]["results"].forEach(result => {
                     result["enriched_text"]["entities"].forEach(entity => {
                         if(entity.type == "Person" && entity.relevance > 0 && !personNames.has(entity.text)) {
                             persons.add({name: entity.text, value: entity.relevance});
@@ -507,9 +514,6 @@ function App() {
                                             <div className={classes.details}>
                                                 <CardContent className={classes.content}>
                                                     <PieChart width={400} height={250} className={classes.pieChart}>
-                                                        {/* <text x={100} y={100} textAnchor="middle" dominantBaseline="middle">
-                                                            Overall Sentiment
-                                                        </text> */}
                                                         <Pie startAngle={360} endAngle={0} data={sentimentData} innerRadius={60} outerRadius={80} onMouseEnter={onPieEnter} activeIndex={activePieIndex} activeShape={renderActiveShape} >
                                                             {
                                                                 sentimentData.map((entry, index) => (
