@@ -87,7 +87,7 @@ function getApiToken(key) {
         headers: { 
             'Accept': ' application/json', 
             'Content-Type': 'application/x-www-form-urlencoded', 
-},
+        },
         data : qs.stringify(data)
     };
     return axios(config);
@@ -107,7 +107,6 @@ function App() {
     });
 
     const [apiToken, setApiToken] = useState("");
-    const [refreshToken, setRefreshToken] = useState("");
     const [companyName, setCompanyName] = useState("");
     const [currentRecordId, setCurrentRecordId] = useState("");
     const [json, setJson] = useState({});
@@ -120,12 +119,12 @@ function App() {
 
     useEffect(() => {
         if (companyName != "") {
-            query(apiToken, companyName, 5)
+            query(globalConfig.get("apiToken"), companyName, 5)
             .then(resJson => {
                 setJson(resJson);
             })
             .catch(error => alert(error));
-            // setJson(require("./sample.json"));
+            // setJson(require("./sample.json")); // comment the above query and uncomment this line to use dummy data
         };
     }, [apiToken, companyName]);
 
@@ -150,6 +149,8 @@ function App() {
 
     var onLogout = function(){
         globalConfig.setAsync('apiKey', "");
+        globalConfig.setAsync('apiUrl', "");
+        globalConfig.setAsync('apiToken', "");
         setCurrentBlockState({
             currentPage: Pages.SETUP_WIZARD,
         });
@@ -327,8 +328,8 @@ function App() {
     var refreshApiToken = function() {
         getApiToken(globalConfig.get('apiKey'))
         .then(data =>{
+            globalConfig.setAsync('apiToken', data.data.access_token);
             setApiToken(data.data.access_token);
-            setRefreshToken(data.data.refresh_token);
             setCurrentBlockState({
                 currentPage: Pages.MAIN,
             });
