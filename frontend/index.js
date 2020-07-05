@@ -76,18 +76,18 @@ function query(apiToken, term, count) {
 }
 
 function getApiToken(key) {
-    var herokuProxy = "https://cors-anywhere.herokuapp.com/";
+    var ec2Proxy = "https://54.84.0.154:8000/"; // cors-anywhere server that redirect authentication requests
     var data = {
         apikey: key,
         grant_type : "urn:ibm:params:oauth:grant-type:apikey"
     };
     var config = {
         method: 'post',
-        url: herokuProxy + 'https://iam.cloud.ibm.com/oidc/token',
+        url: ec2Proxy + 'https://iam.cloud.ibm.com/oidc/token',
         headers: { 
             'Accept': ' application/json', 
             'Content-Type': 'application/x-www-form-urlencoded', 
-        },
+},
         data : qs.stringify(data)
     };
     return axios(config);
