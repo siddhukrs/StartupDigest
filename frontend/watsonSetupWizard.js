@@ -43,9 +43,11 @@ function WatsonSetupWizard({ onSetupComplete }) {
     const viewport = useViewport();
     const [currentScreen, goToNextScreen] = useSetupScreen();
     const [apiKey, setApiKey] = useState();
+    const [apiUrl, setApiUrl] = useState();
 
     function onSaveApiKeyClick() {
         globalConfig.setAsync('apiKey', apiKey);
+        globalConfig.setAsync('apiUrl', apiUrl);
         onSetupComplete();
     }
 
@@ -150,13 +152,12 @@ function WatsonSetupWizard({ onSetupComplete }) {
                                             Copy the Watson Discovery API key
                                         </Typography>
                                         <Typography variant="body2">
-                                            Within your Discovery instance, go to the Manage page. Copy the API key and paste it below.
+                                            Within your Discovery instance, go to the Manage page. Copy the API key and URL, and paste them below.
                                         </Typography>
                                     </li>
-                                    <li>
-                                        <Input type="text" onChange={(e) => setApiKey(e.target.value)} placeholder="IBM Watson Discovery API Key" />
-                                    </li>
                                 </ol>
+                                <Input type="text" onChange={(e) => setApiKey(e.target.value)} placeholder="IBM Watson Discovery API Key" />
+                                <Input type="text" onChange={(e) => setApiUrl(e.target.value)} placeholder="URL" />
                             </Typography>
                         </div>
                     </SetupWizard.Screen>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {cursor} from '@airtable/blocks';
+import {cursor, globalConfig} from '@airtable/blocks';
 import { initializeBlock, useBase, useLoadable, useGlobalConfig, useWatchable, useRecords, Heading, Text, ProgressBar, Link, useViewport } from '@airtable/blocks/ui';
 import axios from 'axios';
 import { makeStyles, createMuiTheme, withStyles } from "@material-ui/core/styles";
@@ -63,7 +63,7 @@ const AntTabs = withStyles({
   }))(props => <Tab disableRipple {...props} />);
 
 function query(apiToken, term, count) {
-    var baseUrl = 'https://api.us-south.discovery.watson.cloud.ibm.com/instances/490aeba8-9ab8-4dbd-929c-f426233156ab/v1/environments/system/collections/news-en/query?version=2019-04-30';
+    var baseUrl = globalConfig.get('apiUrl') + '/v1/environments/system/collections/news-en/query?version=2019-04-30';
     var config = {
         method: 'get',
         url: baseUrl + '&count=' + count + '&query=' + term + "&aggregation=term(enriched_text.sentiment.document.label)",
@@ -76,17 +76,17 @@ function query(apiToken, term, count) {
 }
 
 function getApiToken(key) {
+    var herokuProxy = "https://cors-anywhere.herokuapp.com/";
     var data = {
         apikey: key,
         grant_type : "urn:ibm:params:oauth:grant-type:apikey"
     };
     var config = {
         method: 'post',
-        url: 'https://cors-anywhere.herokuapp.com/https://iam.cloud.ibm.com/oidc/token',
+        url: herokuProxy + 'https://iam.cloud.ibm.com/oidc/token',
         headers: { 
             'Accept': ' application/json', 
             'Content-Type': 'application/x-www-form-urlencoded', 
-            'Cookie': 'sessioncookie=db1d81ee77c52e668f450df0f2da927d'
         },
         data : qs.stringify(data)
     };
