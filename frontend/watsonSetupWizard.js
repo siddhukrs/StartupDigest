@@ -69,7 +69,7 @@ function WatsonSetupWizard({ onSetupComplete }) {
     const useStyles = makeStyles(theme => ({
         setupText: {
             marginTop: 25,
-            maxWidth: 450,
+            maxWidth: 500,
             margin: "0 auto"
         },
         image: {
@@ -122,10 +122,10 @@ function WatsonSetupWizard({ onSetupComplete }) {
                         <div className={classes.setupText}>
                             <CardMedia className={classes.watson} image="https://i.pinimg.com/originals/e9/f4/ea/e9f4ea5b670fe8235dee75dbbf098737.png" />
                             <Typography variant="h5" color="primary">
-                                Create a Watson Discovery API Key
+                                Create an IBM Watson Discovery API Key
                             </Typography>
                             <Typography variant="subtitle2">
-                                To use this block, you need to create an IBM Cloud Discovery service. If you’ve setup the discover block before, you can reuse the same API key.
+                                To use this block, you need to create an IBM Watson Cloud Discovery API key. If you already have an API Key, you can reuse the same one.
                             </Typography>
                             <Typography variant="h6">
                                 <ol>
@@ -134,27 +134,27 @@ function WatsonSetupWizard({ onSetupComplete }) {
                                             Create a IBM Cloud Account
                                         </Typography>
                                         <Typography variant="body2">
-                                            Go to the <Link href="https://cloud.ibm.com/registration">IBM Cloud Console</Link> and create a new account. You may also use an existing account of your own.
+                                            Go to the <Link rel="noopener noreferrer" target="_blank" href="https://cloud.ibm.com/registration">IBM Cloud Console</Link> and create a new account or log in with an existing one.
                                         </Typography>
                                     </li>
                                     <li>
                                         <Typography variant="h6" color="primary">
-                                            Create a discover services on IBM Cloud 
+                                            Create a Discovery Service on IBM Cloud 
                                         </Typography>
                                         <Typography variant="body2">
-                                            Create an instance of <Link href="https://cloud.ibm.com/catalog/services/discovery">Watson Discovery Service</Link> based on your plan requirements. 
+                                            Create an instance of the <Link rel="noopener noreferrer" target="_blank" href="https://cloud.ibm.com/catalog/services/discovery">Watson Discovery Service</Link> based on your plan requirements. The Lite plan is free and it’s usually sufficient.
                                         </Typography>
                                     </li>
                                     <li>
                                         <Typography variant="h6" color="primary">
-                                            Get the created Watson Discovery API key 
+                                            Copy the Watson Discovery API key
                                         </Typography>
                                         <Typography variant="body2">
-                                            Inside your Discovery instance,  manage page displays your API key. Copy the API key and paste it below
+                                            Within your Discovery instance, go to the Manage page. Copy the API key and paste it below.
                                         </Typography>
                                     </li>
                                     <li>
-                                        <Input type="text" onChange={(e) => setApiKey(e.target.value)} placeholder="Watson API Key" />
+                                        <Input type="text" onChange={(e) => setApiKey(e.target.value)} placeholder="IBM Watson Discovery API Key" />
                                     </li>
                                 </ol>
                             </Typography>

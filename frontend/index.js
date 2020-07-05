@@ -14,12 +14,13 @@ import qs from 'qs';
 import WatsonSetupWizard from './watsonSetupWizard.js';
 import { Typography } from '@material-ui/core';
 import { PieChart, Pie, Sector, Cell } from 'recharts';
+import TagCloud from 'react-tag-cloud';
 
 function query(apiToken, term, count) {
     var baseUrl = 'https://api.us-south.discovery.watson.cloud.ibm.com/instances/490aeba8-9ab8-4dbd-929c-f426233156ab/v1/environments/system/collections/news-en/query?version=2019-04-30';
     var config = {
         method: 'get',
-        url: baseUrl + '&count=' + count + '&query=' + term,
+        url: baseUrl + '&count=' + count + '&query=' + term + "&aggregation=term(enriched_text.sentiment.document.label)",
         headers: {
             'Host': 'api.us-south.discovery.watson.cloud.ibm.com', 
             'Authorization': 'Bearer ' + apiToken
@@ -67,12 +68,12 @@ function App() {
 
     useEffect(() => {
         if (companyName != "") {
-            query(apiToken, companyName, 5)
-            .then(resJson => {
-                setJson(resJson);
-            })
-            .catch(error => alert(error));
-            // setJson(require("./sample.json"));
+            // query(apiToken, companyName, 5)
+            // .then(resJson => {
+            //     setJson(resJson);
+            // })
+            // .catch(error => alert(error));
+            setJson(require("./sample.json"));
         };
     }, [apiToken, companyName]);
 
@@ -182,7 +183,11 @@ function App() {
         },
         logoutButton: {
             float: "right",
-            marginRight: 20,
+            marginRight: 10,
+        },
+        logoutButtonEmptyPage: {
+            float: "right",
+            marginRight: 10,
         },
         bar: {
             marginTop: 42,
@@ -212,9 +217,37 @@ function App() {
             marginLeft: 10,
         },
         clickOnARowMessage: {
-            marginTop: "40%",
+            marginTop: "30%",
             maxWidth: 300,
-            margin: "0 auto"
+            marginLeft: "30%",
+            float: "left"
+        },
+        tagCloud : {
+            fontFamily: "Roboto, sans-serif",
+            color: "#9752e0",
+            padding: 1,
+            width:400,
+            height: 200
+        },
+        tagContainer: {
+            float: "right",
+            marginRight: 20,
+            maxWidth: 200,
+            marginLeft: 90
+        },
+        largeTag: {
+            fontSize: 30,
+            fontWeight: 'bold'
+        },
+        smallTag: {
+            opacity: 0.7,
+            fontSize: 16
+        },
+        pieChart: {
+            float: "left"
+        },
+        leftFloat: {
+            float: "left",
         }
     }));
     const classes = useStyles();
@@ -273,7 +306,7 @@ function App() {
                             <Card className={classes.root}>
                                 <div className={classes.details}>
                                     <CardContent className={classes.content}>
-                                        <Link href={element.url}>
+                                        <Link rel="noopener noreferrer" target="_blank" href={element.url}>
                                             <Heading size="small">
                                                 {element.title}
                                             </Heading>
@@ -305,55 +338,76 @@ function App() {
                     );
                 });
                 
-                // var sentimentResults = json["data"]["aggregations"][0]["results"];
-                // var totalCount = 0;
-                // sentimentResults.forEach(ele => {
-                //     totalCount += ele.matching_results;
-                // });
-                // sentimentResults.forEach(ele => {
-                //     sentimentData.push({name: ele.key, value: Math.round(ele.matching_results*100/totalCount)});
-                // });
+                var sentimentResults = json["data"]["aggregations"][0]["results"];
+                var totalCount = 0;
+                sentimentResults.forEach(ele => {
+                    totalCount += ele.matching_results;
+                });
+                sentimentResults.forEach(ele => {
+                    sentimentData.push({name: ele.key, value: Math.round(ele.matching_results*100/totalCount)});
+                });
 
-                // var companies = new Set();
-                // var persons = new Set();
-                // var enrichedText = json["data"]["results"].forEach(result => {
-                //     result["enriched_text"]["entities"].forEach(entity => {
-                //         if(entity.type == "Person") {
-                //             persons.add(entity.text);
-                //         }
-                //         if (entity.type == "Company") {
-                //             companies.add(entity.text);
-                //         }
-                //     });
-                // });
-                // alert(companies.size);
-                // alert(persons.size);
+                var companyNames = new Set();
+                var companies = new Set();
+                var personNames = new Set();
+                var persons = new Set();
+                var enrichedText = json["data"]["results"].forEach(result => {
+                    result["enriched_text"]["entities"].forEach(entity => {
+                        if(entity.type == "Person" && entity.relevance > 0 && !personNames.has(entity.text)) {
+                            persons.add({name: entity.text, value: entity.relevance});
+                            personNames.add(entity.text);
+                        }
+                        if (entity.type == "Company" && entity.relevance > 0 && !companyNames.has(entity.text)) {
+                            companies.add({name: entity.text, value: entity.relevance});
+                            companyNames.add(entity.text);
+                        }
+                    });
+                });
 
                 return (
                     <ThemeProvider theme={theme}>
                         <div>
-                            <Button size="small" color="primary" onClick={e => onLogout()} className={classes.logoutButton}>Logout</Button>
-                            <Typography variant="h4" color="primary" className={classes.heading}> {companyName.toUpperCase()} </Typography>
-                            {/* <Heading textColor="light" size="small" className={classes.subheading} > Overall sentiment </Heading>
-                            <PieChart width={200} height={200}>
+                            <Button size="small" color="primary" onClick={e => onLogout()} className={classes.logoutButton}>Revoke API Key</Button>
+                            <div className={classes.leftFloat}>
+                                <Typography variant="h4" color="primary" className={classes.heading}> {companyName.toUpperCase()} </Typography>
+                                <Heading textColor="light" size="small" className={classes.subheading} > News Analysis </Heading>
+                                <PieChart width={200} height={200} className={classes.pieChart}>
+                                <text x={100} y={100} textAnchor="middle" dominantBaseline="middle">
+                                    Overall Sentiment
+                                </text>
                                 <Pie startAngle={360} endAngle={0} data={sentimentData} innerRadius={60} outerRadius={80} >
-                                {
-                                    sentimentData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={colors[entry.name]}/>
-                                    ))
-                                }
-                            </Pie>
-                            </PieChart> */}
-                            <Heading textColor="light" size="small" className={classes.subheading} > Top stories </Heading>
-                            {cards}
+                                    {
+                                        sentimentData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={colors[entry.name]}/>
+                                        ))
+                                    }
+                                </Pie>
+                                </PieChart>
+                                <div className={classes.tagContainer}>
+                                    <TagCloud className={classes.tagCloud}>
+                                        {
+                                            Array.from(persons).map((ele, index) => (
+                                                <div className={ele.value>0.2?classes.largeTag:classes.smallTag}>{ele.name}</div>
+                                            ))
+                                        }
+                                    </TagCloud>
+                                </div>
+                            </div>
+                            <div className={classes.leftFloat}>
+                                <Heading className={classes.subheading} textColor="light" size="small" > Top stories </Heading>
+                                {cards}
+                            </div>
                         </div>
                     </ThemeProvider>
                 );
             }
             return (
                 <ThemeProvider theme={theme}>
-                    <div>
-                        <Typography className={classes.clickOnARowMessage} color="secondary">Select a row to generate your digest.</Typography>
+                    <div className={classes.logoutButtonEmptyPage}>
+                        <Button size="small" color="primary" onClick={e => onLogout()}>Revoke API Key</Button>
+                    </div>
+                    <div className={classes.clickOnARowMessage}>
+                        <Typography color="secondary">Select a row to generate your digest.</Typography>
                     </div>
                 </ThemeProvider>
             )
