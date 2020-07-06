@@ -123,7 +123,12 @@ function App() {
             .then(resJson => {
                 setJson(resJson);
             })
-            .catch(error => alert(error));
+            .catch(error => {
+                refreshApiToken();
+                setInterval(() => {
+                    refreshApiToken();
+                }, 600000);
+            });
             // setJson(require("./sample.json")); // comment the above query and uncomment this line to use dummy data
         };
     }, [apiToken, companyName]);
@@ -336,7 +341,7 @@ function App() {
             viewport.exitFullscreen();
         })
         .catch(error => {
-                alert("Invalid API Key");
+                alert("API key is invalid");
                 globalConfig.setAsync('apiKey', "");
         });
     };
@@ -491,7 +496,7 @@ function App() {
                 return (
                     <ThemeProvider theme={theme}>
                         <div>
-                            <Button size="small" color="primary" onClick={e => onLogout()} className={classes.logoutButton}>Revoke API Key</Button>
+                            <Button size="small" color="primary" onClick={e => onLogout()} className={classes.logoutButton}>Change API Key</Button>
                             <Typography variant="h4" color="primary" className={classes.heading}> {companyName.toUpperCase()} </Typography>
                             <TabContext value={tabValue}>
                                 <div className={classes.tabRoot}>
@@ -568,10 +573,10 @@ function App() {
             return (
                 <ThemeProvider theme={theme}>
                     <div className={classes.logoutButtonEmptyPage}>
-                        <Button size="small" color="primary" onClick={e => onLogout()}>Revoke API Key</Button>
+                        <Button size="small" color="primary" onClick={e => onLogout()}>Change API Key</Button>
                     </div>
                     <div className={classes.clickOnARowMessage}>
-                        <Typography color="secondary">Select a row to generate your digest.</Typography>
+                        <Typography color="secondary">Select a record in the "Portfolio companies" table to generate your digest.</Typography>
                     </div>
                 </ThemeProvider>
             )
